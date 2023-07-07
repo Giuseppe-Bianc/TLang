@@ -12,7 +12,7 @@ public class Lexer {
     private int index = 0;
     private int line = 1;
     private int column = 1;
-    private int inputLen = 0;
+    private int inputLen;
     private List<Token> tokens;
     private final Set<String> keyWords = new HashSet<>(List.of("var", "val", "function", "return"));
 
@@ -24,9 +24,8 @@ public class Lexer {
 
     public void tokenize() {
 
-        while (index < input.length()) {
+        while (index < inputLen) {
             char currentChar = input.charAt(index);
-
             switch (currentChar) {
                 case '+', '-', '*', ':', '(', ')', '{', '}', '=', '<', '>', ',', '[', ']', ';' -> {
                     tokens.add(new Token(TokenType.OPERATOR, Character.toString(currentChar), line, column));
@@ -40,28 +39,11 @@ public class Lexer {
                 }
                 case '/' -> gestisciCommentoOSlash(currentChar);
                 case '"' -> gestisciString();
-                default -> {
+                default ->{
                     if (Character.isDigit(currentChar)) {
-                        int startIndex = index;
-                        while (index < input.length() && Character.isDigit(input.charAt(index))) {
-                            index++;
-                            column++;
-                        }
-                        String number = input.substring(startIndex, index);
-                        tokens.add(new Token(TokenType.INTERO, number, line, column - number.length()));
+                        gestisciNumeri();
                     } else if (Character.isLetter(currentChar) || currentChar == '_') {
-                        int startIndex = index;
-                        while (index < input.length() &&
-                                (Character.isLetterOrDigit(input.charAt(index)) || input.charAt(index) == '_')) {
-                            index++;
-                            column++;
-                        }
-                        String identifier = input.substring(startIndex, index);
-                        if (keyWords.contains(identifier)) {
-                            tokens.add(new Token(TokenType.KEYWORD, identifier, line, column - identifier.length()));
-                        } else {
-                            tokens.add(new Token(TokenType.IDENTIFIER, identifier, line, column - identifier.length()));
-                        }
+                        gestisciIdentificatoriOKeyWord();
                     } else {
                         index++;
                         column++;
@@ -72,6 +54,54 @@ public class Lexer {
 
         // Add EOF token
         tokens.add(new Token(TokenType.EOF, "", line, column));
+    }
+
+    private void gestisciIdentificatoriOKeyWord() {
+        int startIndex = index;
+        while (index < input.length() &&
+                (Character.isLetterOrDigit(input.charAt(index)) || input.charAt(index) == '_')) {
+            index++;
+            column++;
+        }
+        String identifier = input.substring(startIndex, index);
+        if (keyWords.contains(identifier)) {
+            tokens.add(new Token(TokenType.KEYWORD, identifier, line, column - identifier.length()));
+        } else {
+            tokens.add(new Token(TokenType.IDENTIFIER, identifier, line, column - identifier.length()));
+        }
+    }
+
+    private void gestisciNumeri() {
+        boolean isFloat = false;
+        int startIndex = index;
+        while (index < inputLen && Character.isDigit(input.charAt(index))) {
+            index++;
+            column++;
+        }
+
+        if(input.charAt(index) == '.'){
+            isFloat = true;
+            index++;
+            column++;
+            while (index < inputLen && Character.isDigit(input.charAt(index))) {
+                index++;
+                column++;
+            }
+            if((input.charAt(index) == 'e' || input.charAt(index) == 'E') &&( input.charAt(index+1) == '+' || input.charAt(index+1) == '-')){
+                index+=2;
+                column+=2;
+                while (index < inputLen && Character.isDigit(input.charAt(index))) {
+                    index++;
+                    column++;
+                }
+            }
+        }
+        String number = input.substring(startIndex, index);
+        if(isFloat){
+            tokens.add(new Token(TokenType.FLOAT, number, line, column - number.length()));
+        } else {
+            tokens.add(new Token(TokenType.INTERO, number, line, column - number.length()));
+        }
     }
 
     private void gestisciString() {

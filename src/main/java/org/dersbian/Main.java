@@ -19,7 +19,11 @@ public class Main {
                       return u[i] * v[i];
             }
             var u_str = "stringa"
-            var u_mod = 10
+            var u_mod = 10.22
+            var u_mod2 = 10.22e-1
+            var u_mod3 = 10.22e+2
+            var u_mod4 = 10.22E-1
+            var u_mod5 = 10.22E+2
             var norm = function(u{:}) -> scalar { return sqrt(dot(u, u)); }
             <end>
             """;
