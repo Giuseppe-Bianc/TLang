@@ -1,2 +1,119 @@
-package org.dersbian;public class Lexer {
+package org.dersbian;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class Lexer {
+    private String input;
+    private int index = 0;
+    private int line = 1;
+    private int column = 1;
+    private int inputLen = 0;
+    private List<Token> tokens;
+    private final Set<String> keyWords = new HashSet<>(List.of("var", "val", "function", "return"));
+
+    public Lexer(@NotNull String input) {
+        this.input = input;
+        this.inputLen = input.length();
+        this.tokens = new ArrayList<>();
+    }
+
+    public void tokenize() {
+
+        while (index < input.length()) {
+            char currentChar = input.charAt(index);
+
+            switch (currentChar) {
+                case '+', '-', '*', ':', '(', ')', '{', '}', '=', '<', '>', ',', '[', ']', ';' -> {
+                    tokens.add(new Token(TokenType.OPERATOR, Character.toString(currentChar), line, column));
+                    index++;
+                    column++;
+                }
+                case '\n' -> {
+                    line++;
+                    index++;
+                    column = 1;
+                }
+                case '/' -> gestisciCommentoOSlash(currentChar);
+                case '"' -> gestisciString();
+                default -> {
+                    if (Character.isDigit(currentChar)) {
+                        int startIndex = index;
+                        while (index < input.length() && Character.isDigit(input.charAt(index))) {
+                            index++;
+                            column++;
+                        }
+                        String number = input.substring(startIndex, index);
+                        tokens.add(new Token(TokenType.INTERO, number, line, column - number.length()));
+                    } else if (Character.isLetter(currentChar) || currentChar == '_') {
+                        int startIndex = index;
+                        while (index < input.length() &&
+                                (Character.isLetterOrDigit(input.charAt(index)) || input.charAt(index) == '_')) {
+                            index++;
+                            column++;
+                        }
+                        String identifier = input.substring(startIndex, index);
+                        if (keyWords.contains(identifier)) {
+                            tokens.add(new Token(TokenType.KEYWORD, identifier, line, column - identifier.length()));
+                        } else {
+                            tokens.add(new Token(TokenType.IDENTIFIER, identifier, line, column - identifier.length()));
+                        }
+                    } else {
+                        index++;
+                        column++;
+                    }
+                }
+            }
+        }
+
+        // Add EOF token
+        tokens.add(new Token(TokenType.EOF, "", line, column));
+    }
+
+    private void gestisciString() {
+        int startIndex = index;
+        index++; // Move past the opening double quote
+        column++;
+
+        while (index < input.length() && input.charAt(index) != '"') {
+            if (input.charAt(index) == '\n') {
+                line++;
+                column = 1;
+            }
+            index++;
+            column++;
+        }
+
+        if (index < input.length() && input.charAt(index) == '"') {
+            index++; // Move past the closing double quote
+            column++;
+            String stringLiteral = input.substring(startIndex, index);
+            tokens.add(new Token(TokenType.STRING, stringLiteral, line, column - stringLiteral.length()));
+        } else {
+            // Unterminated string literal, handle error or exception
+        }
+    }
+
+    private void gestisciCommentoOSlash(char currentChar) {
+        if (index + 1 < input.length() && input.charAt(index + 1) == '/') {
+            // Ignore the rest of the line as a comment
+            while (index < input.length() && input.charAt(index) != '\n') {
+                index++;
+            }
+            line++;
+            column = 1;
+        } else {
+            tokens.add(new Token(TokenType.OPERATOR, Character.toString(currentChar), line, column));
+            index++;
+            column++;
+        }
+    }
+
+    public List<Token> getTokens() {
+        return tokens;
+    }
 }
