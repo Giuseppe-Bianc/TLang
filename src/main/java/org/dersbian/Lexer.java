@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Set;
 
 public class Lexer {
-    private String input;
+    private final String input;
     private int index = 0;
     private int line = 1;
     private int column = 1;
-    private int inputLen;
-    private List<Token> tokens;
+    private final int inputLen;
+    private final List<Token> tokens;
     private final Set<String> keyWords = new HashSet<>(List.of("var", "val", "function", "return"));
 
     public Lexer(@NotNull String input) {
@@ -23,7 +23,6 @@ public class Lexer {
     }
 
     public void tokenize() {
-
         while (index < inputLen) {
             char currentChar = input.charAt(index);
             switch (currentChar) {
@@ -72,15 +71,25 @@ public class Lexer {
     }
 
     private void gestisciNumeri() {
-        boolean isFloat = false;
         int startIndex = index;
         while (index < inputLen && Character.isDigit(input.charAt(index))) {
             index++;
             column++;
         }
 
+        boolean isFloat = gestisciFloat();
+        String number = input.substring(startIndex, index);
+        if(isFloat){
+            tokens.add(new Token(TokenType.FLOAT, number, line, column - number.length()));
+        } else {
+            tokens.add(new Token(TokenType.INTERO, number, line, column - number.length()));
+        }
+    }
+
+    private boolean gestisciFloat() {
+        boolean isFloats = false;
         if(input.charAt(index) == '.'){
-            isFloat = true;
+            isFloats = true;
             index++;
             column++;
             while (index < inputLen && Character.isDigit(input.charAt(index))) {
@@ -96,12 +105,7 @@ public class Lexer {
                 }
             }
         }
-        String number = input.substring(startIndex, index);
-        if(isFloat){
-            tokens.add(new Token(TokenType.FLOAT, number, line, column - number.length()));
-        } else {
-            tokens.add(new Token(TokenType.INTERO, number, line, column - number.length()));
-        }
+        return isFloats;
     }
 
     private void gestisciString() {
@@ -123,9 +127,9 @@ public class Lexer {
             column++;
             String stringLiteral = input.substring(startIndex, index);
             tokens.add(new Token(TokenType.STRING, stringLiteral, line, column - stringLiteral.length()));
-        } else {
+        } /*else {
             // Unterminated string literal, handle error or exception
-        }
+        }*/
     }
 
     private void gestisciCommentoOSlash(char currentChar) {
